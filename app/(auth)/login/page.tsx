@@ -1,11 +1,13 @@
-"use client";
+"use client"
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { toast } from "sonner"
+import { useRouter, useSearchParams } from "next/navigation"
+import { authClient } from "@/lib/auth-client"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
 	Form,
 	FormControl,
@@ -13,8 +15,8 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import {
 	Card,
 	CardContent,
@@ -22,33 +24,38 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
-} from "@/components/ui/card";
-import { LogIn, Mail, Lock } from "lucide-react";
-import Link from "next/link";
+} from "@/components/ui/card"
+import { LogIn, Mail, Lock } from "lucide-react"
+import Link from "next/link"
 
 const formSchema = z.object({
-	email: z.string().email({
-		message: "Please enter a valid email address.",
-	}),
-	password: z.string().min(6, {
-		message: "Password must be at least 6 characters.",
-	}),
-});
+	email: z.string().email({ message: "Please enter a valid email address." }),
+	password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+})
+
+type FormValues = z.infer<typeof formSchema>
 
 export default function LoginPage() {
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			email: "",
-			password: "",
-		},
-	});
+	const router = useRouter()
+	const searchParams = useSearchParams()
+	const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard/benchmark"
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
-		console.log(values);
-		toast.success("Login successful!", {
-			description: "Welcome back! You have been logged in successfully.",
-		});
+	const form = useForm<FormValues>({
+		resolver: zodResolver(formSchema),
+		defaultValues: { email: "", password: "" },
+	})
+
+	async function onSubmit(values: FormValues) {
+		const { error } = await authClient.signIn.email({
+			email: values.email,
+			password: values.password,
+		})
+		if (error) {
+			toast.error("Invalid email or password")
+			return
+		}
+		router.push(callbackUrl)
+		router.refresh()
 	}
 
 	return (
@@ -104,8 +111,12 @@ export default function LoginPage() {
 								</FormItem>
 							)}
 						/>
-						<Button type="submit" className="w-full">
-							Sign In
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={form.formState.isSubmitting}
+						>
+							{form.formState.isSubmitting ? "Signing in…" : "Sign In"}
 						</Button>
 					</form>
 				</Form>
@@ -130,5 +141,5 @@ export default function LoginPage() {
 				</div>
 			</CardFooter>
 		</Card>
-	);
+	)
 }

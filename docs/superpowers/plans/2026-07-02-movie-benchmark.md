@@ -2,11 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a data-only movie concept evaluator that returns 5 formula-driven benchmark scores from TMDB data, persists runs to Neon Postgres, and requires NextAuth authentication.
+**Goal:** Build a data-only movie concept evaluator that returns 5 formula-driven benchmark scores from TMDB data, persists runs to Neon Postgres, and requires Better Auth authentication.
 
 **Architecture:** A Next.js 15 API route fetches 4 parallel TMDB queries on form submission, runs scoring formulas server-side, saves the result as JSON to Postgres, and returns scores + comparison film lists to the client. No AI in v1.
 
-**Tech Stack:** Next.js 15 App Router, NextAuth v4, Prisma + Neon Postgres, TMDB API v3, shadcn/ui, Tailwind CSS 4, Vitest (scoring tests only)
+**Tech Stack:** Next.js 15 App Router, Better Auth (email/password), Prisma + Neon Postgres, TMDB API v3, shadcn/ui, Tailwind CSS 4, Vitest (scoring tests only)
+
+> **Project skills in use:** `.agents/skills/better-auth-best-practices`, `.agents/skills/better-auth-security-best-practices`, `.agents/skills/neon-postgres`
 
 ## Global Constraints
 
@@ -15,9 +17,9 @@
 - Scores 0–100; `null` means "Insufficient data" (< 3 films available)
 - Revenue data in USD (TMDB standard) — no MYR conversion in v1
 - `vote_count < 10` films excluded from all scoring
-- Neon free tier — single DATABASE_URL connection string
-- Passwords hashed with bcryptjs (saltRounds = 10)
-- Sessions JWT-based (NextAuth default)
+- Neon free tier — use `-pooler` connection string on Vercel (PgBouncer)
+- Passwords handled by Better Auth internally (bcrypt)
+- Sessions via Better Auth cookie cache (JWT strategy)
 
 ---
 
@@ -27,13 +29,13 @@
 ```
 prisma/schema.prisma
 lib/db.ts
-lib/auth.ts
+lib/auth.ts               ← Better Auth server config
+lib/auth-client.ts        ← Better Auth React client
 lib/tmdb.ts
 lib/scoring.ts
 lib/scoring.test.ts
 middleware.ts
-app/api/auth/[...nextauth]/route.ts
-app/api/auth/register/route.ts
+app/api/auth/[...all]/route.ts   ← Better Auth handler (replaces [...nextauth])
 app/api/benchmark/route.ts
 app/api/benchmark/[id]/route.ts
 app/(dashboard)/dashboard/benchmark/page.tsx
@@ -60,14 +62,14 @@ components/shared/sidebar.tsx         ← add Benchmark + History links
 - Create: `.env.local` (not committed — add to .gitignore)
 
 **Interfaces:**
-- Produces: `prisma`, `@prisma/client`, `next-auth`, `bcryptjs`, `@types/bcryptjs`, `vitest` available in project
+- Produces: `prisma`, `@prisma/client`, `better-auth`, `vitest` available in project
 
 - [ ] **Step 1: Install packages**
 
 ```bash
 cd /Users/aizad/Desktop/toggle-movie-benchmark
-npm install prisma @prisma/client next-auth bcryptjs
-npm install -D @types/bcryptjs vitest
+npm install prisma @prisma/client better-auth
+npm install -D vitest
 ```
 
 Expected: packages added to node_modules, package-lock.json updated.
@@ -85,14 +87,16 @@ Expected: `prisma/schema.prisma` created, `.env` created with `DATABASE_URL` pla
 Create the file `.env.local` at the project root (not `.env` — Next.js loads `.env.local`):
 
 ```
-DATABASE_URL="postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require"
-NEXTAUTH_SECRET="replace-with-output-of-openssl-rand-base64-32"
-NEXTAUTH_URL="http://localhost:3000"
+DATABASE_URL="postgresql://USER:PASSWORD@ep-xxx-pooler.region.aws.neon.tech/DBNAME?sslmode=require"
+BETTER_AUTH_SECRET="replace-with-output-of-openssl-rand-base64-32"
+BETTER_AUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 TMDB_API_KEY="your-tmdb-api-key-from-themoviedb.org"
 ```
 
-> To generate NEXTAUTH_SECRET run: `openssl rand -base64 32`
+> To generate BETTER_AUTH_SECRET run: `openssl rand -base64 32`
 > Get TMDB_API_KEY free at https://www.themoviedb.org/settings/api
+> Use the **pooler** connection string from Neon (hostname ends in `-pooler`) — required for Vercel Fluid compute
 
 - [ ] **Step 4: Add `.env.local` to `.gitignore`**
 
@@ -112,7 +116,7 @@ rm .env
 
 ```bash
 git add package.json package-lock.json prisma/schema.prisma .gitignore
-git commit -m "chore: add prisma, next-auth, bcryptjs, vitest deps"
+git commit -m "chore: add prisma, better-auth, vitest deps"
 ```
 
 ---
@@ -204,115 +208,104 @@ git commit -m "feat: add prisma schema and db client singleton"
 
 ---
 
-## Task 3: NextAuth setup and register API
+## Task 3: Better Auth setup
 
 **Files:**
 - Create: `lib/auth.ts`
-- Create: `app/api/auth/[...nextauth]/route.ts`
-- Create: `app/api/auth/register/route.ts`
+- Create: `lib/auth-client.ts`
+- Create: `app/api/auth/[...all]/route.ts`
 
 **Interfaces:**
 - Consumes: `db` from `@/lib/db`
 - Produces:
-  - `authOptions` — NextAuth config, exported from `@/lib/auth`
-  - `POST /api/auth/register` — body `{ email, password }` → `201 { id, email }` or `400`/`409`
-  - `POST /api/auth/callback/credentials` — handled by NextAuth
+  - `auth` — Better Auth server instance, exported from `@/lib/auth`
+  - `authClient` — Better Auth React client, exported from `@/lib/auth-client`
+  - `GET|POST /api/auth/[...all]` — handled by Better Auth (sign-in, sign-up, sign-out, session)
+  - Server: `auth.api.getSession({ headers: await headers() })` → `{ session, user } | null`
+  - Client: `authClient.useSession()`, `authClient.signIn.email()`, `authClient.signUp.email()`, `authClient.signOut()`
 
-- [ ] **Step 1: Create `lib/auth.ts`**
+- [ ] **Step 1: Generate Better Auth schema additions**
 
-```typescript
-import { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import { db } from "@/lib/db"
-
-export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
-        const user = await db.user.findUnique({ where: { email: credentials.email } })
-        if (!user) return null
-        const valid = await bcrypt.compare(credentials.password, user.password)
-        if (!valid) return null
-        return { id: user.id, email: user.email }
-      },
-    }),
-  ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) token.id = user.id
-      return token
-    },
-    session({ session, token }) {
-      if (token && session.user) session.user.id = token.id as string
-      return session
-    },
-  },
-}
-```
-
-- [ ] **Step 2: Create `app/api/auth/[...nextauth]/route.ts`**
-
-```typescript
-import NextAuth from "next-auth"
-import { authOptions } from "@/lib/auth"
-
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
-```
-
-- [ ] **Step 3: Create `app/api/auth/register/route.ts`**
-
-```typescript
-import { NextResponse } from "next/server"
-import bcrypt from "bcryptjs"
-import { db } from "@/lib/db"
-
-export async function POST(req: Request) {
-  const { email, password } = await req.json()
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email and password required" }, { status: 400 })
-  }
-  const existing = await db.user.findUnique({ where: { email } })
-  if (existing) {
-    return NextResponse.json({ error: "Email already registered" }, { status: 409 })
-  }
-  const hashed = await bcrypt.hash(password, 10)
-  const user = await db.user.create({ data: { email, password: hashed } })
-  return NextResponse.json({ id: user.id, email: user.email }, { status: 201 })
-}
-```
-
-- [ ] **Step 4: Add `id` to NextAuth Session type — create `types/next-auth.d.ts`**
-
-```typescript
-import "next-auth"
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name?: string | null
-      image?: string | null
-    }
-  }
-}
-```
-
-- [ ] **Step 5: Commit**
+Better Auth manages its own tables (user, session, account, verification). Run the CLI to add them to `prisma/schema.prisma`:
 
 ```bash
-git add lib/auth.ts app/api/auth/ types/
-git commit -m "feat: add nextauth credentials provider and register route"
+npx @better-auth/cli@latest generate --output prisma/schema.prisma
+```
+
+Expected: Prisma schema gets `User`, `Session`, `Account`, `Verification` models added.
+
+> Re-run this command any time you add Better Auth plugins.
+
+- [ ] **Step 2: Create `lib/auth.ts`**
+
+```typescript
+import { betterAuth } from "better-auth"
+import { prismaAdapter } from "better-auth/adapters/prisma"
+import { db } from "@/lib/db"
+
+export const auth = betterAuth({
+  database: prismaAdapter(db, { provider: "postgresql" }),
+  emailAndPassword: { enabled: true },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5,    // 5 min client-side cache
+      strategy: "jwt",
+    },
+  },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+  },
+})
+```
+
+- [ ] **Step 3: Create `lib/auth-client.ts`**
+
+```typescript
+import { createAuthClient } from "better-auth/react"
+
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL,
+})
+```
+
+- [ ] **Step 4: Create `app/api/auth/[...all]/route.ts`**
+
+```typescript
+import { auth } from "@/lib/auth"
+import { toNextJsHandler } from "better-auth/next-js"
+
+export const { GET, POST } = toNextJsHandler(auth)
+```
+
+- [ ] **Step 5: Run Prisma migration to apply Better Auth tables**
+
+```bash
+npx prisma migrate dev --name add-better-auth-tables
+```
+
+Expected: migration applied, `User`, `Session`, `Account`, `Verification` tables created.
+
+- [ ] **Step 6: Verify auth is running**
+
+```bash
+npm run dev
+```
+
+Then in another terminal:
+
+```bash
+curl http://localhost:3000/api/auth/ok
+```
+
+Expected response: `{"status":"ok"}`
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add lib/auth.ts lib/auth-client.ts app/api/auth/ prisma/
+git commit -m "feat: add better-auth with email/password and prisma adapter"
 ```
 
 ---
@@ -323,32 +316,35 @@ git commit -m "feat: add nextauth credentials provider and register route"
 - Create: `middleware.ts` (project root)
 
 **Interfaces:**
-- Consumes: NextAuth JWT token via `getToken`
+- Consumes: Better Auth session cookie
 - Produces: Redirects unauthenticated requests to `/login`; allows auth routes through
 
 - [ ] **Step 1: Create `middleware.ts`**
 
+Better Auth exposes a session cookie named `better-auth.session_token`. Read it to guard routes without a full DB call.
+
 ```typescript
-import { getToken } from "next-auth/jwt"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
   const { pathname } = req.nextUrl
+  const sessionCookie =
+    req.cookies.get("better-auth.session_token") ??
+    req.cookies.get("__Secure-better-auth.session_token")
 
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register")
   const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/api/benchmark")
 
-  if (isProtected && !token) {
+  if (isProtected && !sessionCookie) {
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  if (isAuthRoute && token) {
+  if (isAuthRoute && sessionCookie) {
     return NextResponse.redirect(new URL("/dashboard/benchmark", req.url))
   }
 
@@ -372,7 +368,7 @@ Expected: file listed.
 
 ```bash
 git add middleware.ts
-git commit -m "feat: add route protection middleware"
+git commit -m "feat: add route protection middleware for better-auth"
 ```
 
 ---
@@ -384,7 +380,7 @@ git commit -m "feat: add route protection middleware"
 - Modify: `app/(auth)/register/page.tsx`
 
 **Interfaces:**
-- Consumes: `signIn` from `next-auth/react`, `POST /api/auth/register`
+- Consumes: `authClient` from `@/lib/auth-client`, `auth` from `@/lib/auth`
 - Produces: Working login/register that creates sessions and redirects to `/dashboard/benchmark`
 
 - [ ] **Step 1: Replace `app/(auth)/login/page.tsx` `onSubmit` function**
@@ -398,8 +394,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
-import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { authClient } from "@/lib/auth-client"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -424,12 +420,11 @@ export default function LoginPage() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const result = await signIn("credentials", {
+    const { error } = await authClient.signIn.email({
       email: values.email,
       password: values.password,
-      redirect: false,
     })
-    if (result?.error) {
+    if (error) {
       toast.error("Invalid email or password")
       return
     }
@@ -512,8 +507,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { authClient } from "@/lib/auth-client"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -540,20 +535,15 @@ export default function RegisterPage() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: values.email, password: values.password }),
+    const { error } = await authClient.signUp.email({
+      email: values.email,
+      password: values.password,
+      name: values.email.split("@")[0],  // Better Auth requires name field
     })
-    if (res.status === 409) {
-      toast.error("This email is already registered")
+    if (error) {
+      toast.error(error.message ?? "Registration failed. Please try again.")
       return
     }
-    if (!res.ok) {
-      toast.error("Registration failed. Please try again.")
-      return
-    }
-    await signIn("credentials", { email: values.email, password: values.password, redirect: false })
     router.push("/dashboard/benchmark")
     router.refresh()
   }
@@ -637,24 +627,36 @@ export default function RegisterPage() {
 
 - [ ] **Step 3: Update `app/page.tsx` to redirect based on auth**
 
-Replace the full file:
-
 ```typescript
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 export default async function RootPage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth.api.getSession({ headers: await headers() })
   redirect(session ? "/dashboard/benchmark" : "/login")
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Update benchmark API routes to use Better Auth session**
+
+In both `app/api/benchmark/route.ts` and `app/api/benchmark/[id]/route.ts`, replace `getServerSession(authOptions)` with:
+
+```typescript
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+
+const session = await auth.api.getSession({ headers: await headers() })
+if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+```
+
+Also update `app/api/benchmark/history/route.ts` the same way.
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add app/\(auth\)/login/page.tsx app/\(auth\)/register/page.tsx app/page.tsx
-git commit -m "feat: wire login and register pages to nextauth"
+git add app/\(auth\)/login/page.tsx app/\(auth\)/register/page.tsx app/page.tsx app/api/
+git commit -m "feat: wire login and register pages to better-auth"
 ```
 
 ---

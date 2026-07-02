@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "computedHash": "a4c830509e85557b59339d8d93a4e243e9e59c686e7678854d39230e12c2a6dc"
+    },
+    "better-auth-security-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "security/SKILL.md",
+      "computedHash": "5717187bba9c22030c7174c74012f01c359f21e2ce87e0eb80e24244d8b8c915"
+    },
+    "neon-postgres": {
+      "source": "neondatabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/neon-postgres/SKILL.md",
+      "computedHash": "6d553b1a5ea75524861b93752c91d1ad83d6c108f08be7225b7365c42ec9e05b"
+    },
+    "spec-writer": {
+      "source": "kambleakash0/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spec-writer/SKILL.md",
+      "computedHash": "52b23d8273ef5deae3568081117f01acb721c783a6011c63d885846507f62f53"
+    }
+  }
+}

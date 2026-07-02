@@ -8,6 +8,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  Clapperboard,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +28,23 @@ const sidebarGroups = [
         href: "/dashboard/analytics",
         icon: BarChart3,
         badge: "New",
+      },
+    ],
+  },
+  {
+    title: "Movie Benchmark",
+    items: [
+      {
+        title: "Benchmark",
+        href: "/dashboard/benchmark",
+        icon: Clapperboard,
+        badge: null,
+      },
+      {
+        title: "History",
+        href: "/dashboard/history",
+        icon: History,
+        badge: null,
       },
     ],
   },

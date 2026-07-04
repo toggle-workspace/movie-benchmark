@@ -2,12 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clapperboard,
-  History,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Clapperboard, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sidebarGroups = [
@@ -51,9 +46,17 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className={cn("flex h-16 items-center border-b", isCollapsed ? "justify-center px-0" : "justify-between px-6")}>
+      <div
+        className={cn(
+          "flex h-16 items-center border-b",
+          isCollapsed ? "justify-center px-0" : "justify-between px-6",
+        )}
+      >
         {!isCollapsed && (
-          <Link href="/dashboard/benchmark" className="flex items-center gap-3 group">
+          <Link
+            href="/dashboard/benchmark"
+            className="flex items-center gap-3 group"
+          >
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Clapperboard className="w-4 h-4 text-primary-foreground" />
             </div>
@@ -95,7 +98,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
             )}
 
             {/* Group Items */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               {group.items.map((item) => {
                 const Icon = item.icon;
 

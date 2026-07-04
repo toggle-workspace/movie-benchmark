@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -36,7 +35,6 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onMobileClose }: SidebarProps) {
-  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLinkClick = () => {
@@ -53,7 +51,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6 justify-between">
+      <div className={cn("flex h-16 items-center border-b", isCollapsed ? "justify-center px-0" : "justify-between px-6")}>
         {!isCollapsed && (
           <Link href="/dashboard/benchmark" className="flex items-center gap-3 group">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -64,27 +62,29 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
             </span>
           </Link>
         )}
-        {isCollapsed && (
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-            <Clapperboard className="w-4 h-4 text-primary-foreground" />
-          </div>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 hover:bg-muted"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? (
+        {isCollapsed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-muted"
+            onClick={() => setIsCollapsed(false)}
+          >
             <ChevronRight className="h-4 w-4" />
-          ) : (
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-muted"
+            onClick={() => setIsCollapsed(true)}
+          >
             <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
+          </Button>
+        )}
       </div>
 
       {/* Navigation Groups */}
-      <nav className="flex-1 space-y-8 p-6">
+      <nav className={cn("flex-1 space-y-8", isCollapsed ? "p-2" : "p-6")}>
         {sidebarGroups.map((group) => (
           <div key={group.title} className="space-y-3">
             {/* Group Title */}
@@ -97,7 +97,6 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
             {/* Group Items */}
             <div className="space-y-4">
               {group.items.map((item) => {
-                const isActive = pathname === item.href;
                 const Icon = item.icon;
 
                 return (
@@ -106,10 +105,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                     href={item.href}
                     onClick={handleLinkClick}
                     className={cn(
-                      "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 hover:bg-muted",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-                        : "text-muted-foreground hover:text-foreground",
+                      "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 hover:bg-muted text-muted-foreground hover:text-foreground",
                       isCollapsed && "justify-center px-3 py-4",
                     )}
                     title={isCollapsed ? item.title : undefined}
@@ -118,7 +114,6 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                       className={cn(
                         "transition-all duration-200",
                         isCollapsed ? "h-5 w-5" : "h-4 w-4",
-                        isActive && !isCollapsed && "text-primary-foreground",
                       )}
                     />
                     {!isCollapsed && (

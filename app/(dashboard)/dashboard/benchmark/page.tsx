@@ -1,13 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { Clapperboard, Search } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
 	Form,
@@ -26,13 +23,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card"
 import { TMDB_GENRES } from "@/lib/tmdb"
 
 const formSchema = z.object({
@@ -43,8 +33,6 @@ const formSchema = z.object({
 		.int()
 		.min(2020)
 		.max(2035, "Release year must be between 2020 and 2035"),
-	companyId: z.coerce.number().int().positive("Select a production company"),
-	companyName: z.string().min(1),
 	director: z.string().optional(),
 	cast: z.string().optional(),
 	budgetMYR: z.coerce.number().optional(),
@@ -56,49 +44,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-interface CompanyOption {
-	id: number
-	name: string
-}
-
 export default function BenchmarkPage() {
 	const router = useRouter()
-	const [companySearch, setCompanySearch] = useState("")
-	const [companies, setCompanies] = useState<CompanyOption[]>([])
-	const [searching, setSearching] = useState(false)
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			title: "",
 			releaseYear: new Date().getFullYear() + 1,
-			companyName: "",
 			audience: "General",
 			language: "Malay",
 			platform: "Cinema",
 		},
 	})
-
-	async function searchCompanies() {
-		if (companySearch.length < 2) return
-		setSearching(true)
-		try {
-			const res = await fetch(`/api/company-search?q=${encodeURIComponent(companySearch)}`)
-			const data = await res.json()
-			setCompanies(data)
-		} catch {
-			toast.error("Failed to search companies")
-		} finally {
-			setSearching(false)
-		}
-	}
-
-	function selectCompany(company: CompanyOption) {
-		form.setValue("companyId", company.id)
-		form.setValue("companyName", company.name)
-		setCompanySearch(company.name)
-		setCompanies([])
-	}
 
 	async function onSubmit(values: FormValues) {
 		const res = await fetch("/api/benchmark", {
@@ -117,7 +75,7 @@ export default function BenchmarkPage() {
 	}
 
 	return (
-		<div className="space-y-6 max-w-3xl">
+		<div className="space-y-6 max-w-3xl mx-auto">
 			<div className="flex flex-col gap-2">
 				<h1 className="text-4xl font-bold tracking-tight">Movie Benchmark</h1>
 				<p className="text-muted-foreground text-lg">
@@ -125,19 +83,8 @@ export default function BenchmarkPage() {
 				</p>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<Clapperboard className="h-5 w-5" />
-						Movie Concept
-					</CardTitle>
-					<CardDescription>
-						Fill in the details about your film concept to start benchmarking.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 							{/* Basic Info */}
 							<div className="grid gap-4 md:grid-cols-2">
 								<FormField
@@ -165,7 +112,7 @@ export default function BenchmarkPage() {
 												value={field.value?.toString()}
 											>
 												<FormControl>
-													<SelectTrigger>
+													<SelectTrigger className="w-full">
 														<SelectValue placeholder="Select a genre" />
 													</SelectTrigger>
 												</FormControl>
@@ -197,52 +144,7 @@ export default function BenchmarkPage() {
 								/>
 							</div>
 
-							{/* Company Search */}
-							<div className="space-y-2">
-								<FormLabel>Production Company</FormLabel>
-								<div className="flex gap-2">
-									<Input
-										placeholder="Search TMDB for your company…"
-										value={companySearch}
-										onChange={(e) => setCompanySearch(e.target.value)}
-										onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), searchCompanies())}
-									/>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={searchCompanies}
-										disabled={searching}
-									>
-										<Search className="h-4 w-4" />
-									</Button>
-								</div>
-								{form.formState.errors.companyId && (
-									<p className="text-sm font-medium text-destructive">
-										{form.formState.errors.companyId.message}
-									</p>
-								)}
-								{companies.length > 0 && (
-									<div className="rounded-md border divide-y">
-										{companies.map((c) => (
-											<button
-												key={c.id}
-												type="button"
-												className="w-full text-left px-4 py-2 hover:bg-muted text-sm"
-												onClick={() => selectCompany(c)}
-											>
-												{c.name}
-											</button>
-										))}
-									</div>
-								)}
-								{form.watch("companyName") && (
-									<p className="text-sm text-muted-foreground">
-										Selected: <span className="font-medium text-foreground">{form.watch("companyName")}</span>
-									</p>
-								)}
-							</div>
-
-							{/* Optional fields */}
+{/* Optional fields */}
 							<div className="grid gap-4 md:grid-cols-2">
 								<FormField
 									control={form.control}
@@ -294,7 +196,7 @@ export default function BenchmarkPage() {
 											<FormLabel>Target Audience</FormLabel>
 											<Select onValueChange={field.onChange} value={field.value}>
 												<FormControl>
-													<SelectTrigger>
+													<SelectTrigger className="w-full">
 														<SelectValue />
 													</SelectTrigger>
 												</FormControl>
@@ -317,7 +219,7 @@ export default function BenchmarkPage() {
 											<FormLabel>Language</FormLabel>
 											<Select onValueChange={field.onChange} value={field.value}>
 												<FormControl>
-													<SelectTrigger>
+													<SelectTrigger className="w-full">
 														<SelectValue />
 													</SelectTrigger>
 												</FormControl>
@@ -340,7 +242,7 @@ export default function BenchmarkPage() {
 											<FormLabel>Distribution Platform</FormLabel>
 											<Select onValueChange={field.onChange} value={field.value}>
 												<FormControl>
-													<SelectTrigger>
+													<SelectTrigger className="w-full">
 														<SelectValue />
 													</SelectTrigger>
 												</FormControl>
@@ -382,10 +284,8 @@ export default function BenchmarkPage() {
 							>
 								{form.formState.isSubmitting ? "Running benchmark…" : "Run Benchmark"}
 							</Button>
-						</form>
-					</Form>
-				</CardContent>
-			</Card>
+				</form>
+			</Form>
 		</div>
 	)
 }

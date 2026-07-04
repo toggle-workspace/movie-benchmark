@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  BarChart3,
   ChevronLeft,
   ChevronRight,
   Clapperboard,
@@ -14,23 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 
 const sidebarGroups = [
-  {
-    title: "General",
-    items: [
-      {
-        title: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-        badge: null,
-      },
-      {
-        title: "Analytics",
-        href: "/dashboard/analytics",
-        icon: BarChart3,
-        badge: "New",
-      },
-    ],
-  },
   {
     title: "Movie Benchmark",
     items: [
@@ -74,18 +55,18 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6 justify-between">
         {!isCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-3 group">
+          <Link href="/dashboard/benchmark" className="flex items-center gap-3 group">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
+              <Clapperboard className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold group-hover:text-primary transition-colors">
-              Dashboard
+              MovieBench
             </span>
           </Link>
         )}
         {isCollapsed && (
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-            <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
+            <Clapperboard className="w-4 h-4 text-primary-foreground" />
           </div>
         )}
         <Button

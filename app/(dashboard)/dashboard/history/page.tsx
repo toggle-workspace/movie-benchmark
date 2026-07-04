@@ -38,8 +38,8 @@ export default function HistoryPage() {
 
 	useEffect(() => {
 		fetch("/api/benchmark/history")
-			.then((r) => r.json())
-			.then(setRuns)
+			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+			.then((data) => setRuns(Array.isArray(data) ? data : []))
 			.catch(() => toast.error("Failed to load history"))
 			.finally(() => setLoading(false))
 	}, [])

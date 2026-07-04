@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { benchmarkRun } from "@/lib/schema"
 import { headers } from "next/headers"
 import {
 	fetchCompanyFilms,
@@ -64,13 +65,15 @@ export async function POST(req: NextRequest) {
 
 	const result = { ...scores, aggregate }
 
-	const run = await db.benchmarkRun.create({
-		data: {
+	const [run] = await db
+		.insert(benchmarkRun)
+		.values({
+			id: crypto.randomUUID(),
 			userId: session.user.id,
-			concept: concept as never,
-			result: result as never,
-		},
-	})
+			concept,
+			result,
+		})
+		.returning({ id: benchmarkRun.id })
 
 	return NextResponse.json({ id: run.id, result })
 }

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { benchmarkRun } from "@/lib/schema"
+import { and, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -86,9 +88,10 @@ export default async function ResultsPage({ params }: ResultPageProps) {
 	if (!session) redirect("/login")
 
 	const { id } = await params
-	const run = await db.benchmarkRun.findFirst({
-		where: { id, userId: session.user.id },
-	})
+	const [run] = await db
+		.select()
+		.from(benchmarkRun)
+		.where(and(eq(benchmarkRun.id, id), eq(benchmarkRun.userId, session.user.id)))
 
 	if (!run) notFound()
 

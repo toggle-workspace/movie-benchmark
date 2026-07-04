@@ -6,6 +6,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { Suspense } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -35,7 +36,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-export default function LoginPage() {
+function LoginForm() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard/benchmark"
@@ -141,5 +142,13 @@ export default function LoginPage() {
 				</div>
 			</CardFooter>
 		</Card>
+	)
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense>
+			<LoginForm />
+		</Suspense>
 	)
 }

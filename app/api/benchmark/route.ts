@@ -15,6 +15,7 @@ import {
 	scoreGlobalCompetitiveness,
 	computeAggregate,
 } from "@/lib/scoring"
+import { getMyrToUsdRate } from "@/lib/exchange"
 
 export interface MovieConcept {
 	title: string
@@ -29,8 +30,6 @@ export interface MovieConcept {
 	platform: string
 }
 
-const MYR_TO_USD = 0.22
-
 export async function POST(req: NextRequest) {
 	const session = await auth.api.getSession({ headers: await headers() })
 	if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -40,14 +39,15 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Missing required fields: title, genreId, releaseYear" }, { status: 400 })
 	}
 
-	const [regionalFilms, globalFilms] = await Promise.all([
+	const [regionalFilms, globalFilms, myrToUsd] = await Promise.all([
 		fetchRegionalFilms(concept.genreId, concept.releaseYear),
 		fetchGlobalFilms(concept.genreId, concept.releaseYear),
+		getMyrToUsdRate(),
 	])
 
 	const enrichedRegional = await enrichWithRevenue(regionalFilms)
 
-	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * MYR_TO_USD : undefined
+	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * myrToUsd : undefined
 
 	const revenuePotential = scoreRevenuePotential(enrichedRegional, budgetUSD)
 	const audienceReception = scoreAudienceReception(regionalFilms)

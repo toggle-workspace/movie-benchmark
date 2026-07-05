@@ -109,29 +109,6 @@ export function scoreRegionalFit(regionalFilms: TmdbMovie[]): ScoreResult {
 	}
 }
 
-export function scoreTrackRecord(companyFilms: TmdbMovie[]): ScoreResult {
-	const qualifying = companyFilms.filter((f) => f.vote_count >= 10)
-
-	if (qualifying.length < 3) {
-		return {
-			score: null,
-			label: "Production Company Track Record",
-			description: "Insufficient company filmography data",
-			films: companyFilms.slice(0, 10).map(toComparison),
-		}
-	}
-
-	const avgVote = avg(qualifying.map((f) => f.vote_average))
-	const score = Math.round((avgVote / 10) * 100)
-
-	return {
-		score,
-		label: "Production Company Track Record",
-		description: `Company average rating: ${avgVote.toFixed(1)}/10 across ${qualifying.length} films`,
-		films: qualifying.slice(0, 10).map(toComparison),
-	}
-}
-
 export function scoreGlobalCompetitiveness(
 	regionalFilms: TmdbMovie[],
 	globalFilms: TmdbMovie[],

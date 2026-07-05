@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Clapperboard, History } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clapperboard, History, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sidebarGroups = [
@@ -19,6 +19,12 @@ const sidebarGroups = [
         title: "History",
         href: "/dashboard/history",
         icon: History,
+        badge: null,
+      },
+      {
+        title: "Box Office",
+        href: "/dashboard/box-office",
+        icon: Trophy,
         badge: null,
       },
     ],

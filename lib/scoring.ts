@@ -20,7 +20,6 @@ export interface BenchmarkScores {
 	revenuePotential: ScoreResult
 	audienceReception: ScoreResult
 	regionalFit: ScoreResult
-	trackRecord: ScoreResult
 	globalCompetitiveness: ScoreResult
 	aggregate: number
 }

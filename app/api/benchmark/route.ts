@@ -4,7 +4,6 @@ import { db } from "@/lib/db"
 import { benchmarkRun } from "@/lib/schema"
 import { headers } from "next/headers"
 import {
-	fetchCompanyFilms,
 	fetchRegionalFilms,
 	fetchGlobalFilms,
 	enrichWithRevenue,
@@ -13,7 +12,6 @@ import {
 	scoreRevenuePotential,
 	scoreAudienceReception,
 	scoreRegionalFit,
-	scoreTrackRecord,
 	scoreGlobalCompetitiveness,
 	computeAggregate,
 } from "@/lib/scoring"
@@ -22,8 +20,6 @@ export interface MovieConcept {
 	title: string
 	genreId: number
 	releaseYear: number
-	companyId: number
-	companyName: string
 	director?: string
 	cast?: string
 	budgetMYR?: number
@@ -40,12 +36,11 @@ export async function POST(req: NextRequest) {
 	if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
 	const concept: MovieConcept = await req.json()
-	if (!concept.title || !concept.genreId || !concept.releaseYear || !concept.companyId) {
-		return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+	if (!concept.title || !concept.genreId || !concept.releaseYear) {
+		return NextResponse.json({ error: "Missing required fields: title, genreId, releaseYear" }, { status: 400 })
 	}
 
-	const [companyFilms, regionalFilms, globalFilms] = await Promise.all([
-		fetchCompanyFilms(concept.companyId),
+	const [regionalFilms, globalFilms] = await Promise.all([
 		fetchRegionalFilms(concept.genreId, concept.releaseYear),
 		fetchGlobalFilms(concept.genreId, concept.releaseYear),
 	])
@@ -57,10 +52,9 @@ export async function POST(req: NextRequest) {
 	const revenuePotential = scoreRevenuePotential(enrichedRegional, budgetUSD)
 	const audienceReception = scoreAudienceReception(regionalFilms)
 	const regionalFit = scoreRegionalFit(regionalFilms)
-	const trackRecord = scoreTrackRecord(companyFilms)
 	const globalCompetitiveness = scoreGlobalCompetitiveness(regionalFilms, globalFilms)
 
-	const scores = { revenuePotential, audienceReception, regionalFit, trackRecord, globalCompetitiveness }
+	const scores = { revenuePotential, audienceReception, regionalFit, globalCompetitiveness }
 	const aggregate = computeAggregate(scores)
 
 	const result = { ...scores, aggregate }

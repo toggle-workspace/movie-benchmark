@@ -15,6 +15,7 @@ import {
 	scoreGlobalCompetitiveness,
 	computeAggregate,
 } from "@/lib/scoring"
+import { getMyrToUsdRate } from "@/lib/exchange"
 
 export interface MovieConcept {
 	title: string
@@ -28,8 +29,6 @@ export interface MovieConcept {
 	language: string
 	platform: string
 }
-
-const MYR_TO_USD = 0.22
 
 export async function POST(req: NextRequest) {
 	const session = await auth.api.getSession({ headers: await headers() })
@@ -47,7 +46,8 @@ export async function POST(req: NextRequest) {
 
 	const enrichedRegional = await enrichWithRevenue(regionalFilms)
 
-	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * MYR_TO_USD : undefined
+	const myrToUsd = await getMyrToUsdRate()
+	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * myrToUsd : undefined
 
 	const revenuePotential = scoreRevenuePotential(enrichedRegional, budgetUSD)
 	const audienceReception = scoreAudienceReception(regionalFilms)

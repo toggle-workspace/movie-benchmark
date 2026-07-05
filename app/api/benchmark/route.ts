@@ -39,14 +39,14 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Missing required fields: title, genreId, releaseYear" }, { status: 400 })
 	}
 
-	const [regionalFilms, globalFilms] = await Promise.all([
+	const [regionalFilms, globalFilms, myrToUsd] = await Promise.all([
 		fetchRegionalFilms(concept.genreId, concept.releaseYear),
 		fetchGlobalFilms(concept.genreId, concept.releaseYear),
+		getMyrToUsdRate(),
 	])
 
 	const enrichedRegional = await enrichWithRevenue(regionalFilms)
 
-	const myrToUsd = await getMyrToUsdRate()
 	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * myrToUsd : undefined
 
 	const revenuePotential = scoreRevenuePotential(enrichedRegional, budgetUSD)

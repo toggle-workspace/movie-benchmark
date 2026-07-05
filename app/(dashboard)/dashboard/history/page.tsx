@@ -94,7 +94,7 @@ export default function HistoryPage() {
 												{run.concept.title}
 											</CardTitle>
 											<p className="text-sm text-muted-foreground">
-												{run.concept.companyName} · {run.concept.releaseYear} ·{" "}
+												{run.concept.releaseYear} ·{" "}
 												{new Date(run.createdAt).toLocaleDateString()}
 											</p>
 										</div>

@@ -102,7 +102,6 @@ export default async function ResultsPage({ params }: ResultPageProps) {
 		{ key: "revenuePotential", label: "Revenue Potential" },
 		{ key: "audienceReception", label: "Audience Reception" },
 		{ key: "regionalFit", label: "Regional Fit" },
-		{ key: "trackRecord", label: "Production Company Track Record" },
 		{ key: "globalCompetitiveness", label: "Global Competitiveness" },
 	]
 
@@ -111,7 +110,7 @@ export default async function ResultsPage({ params }: ResultPageProps) {
 			<div className="flex flex-col gap-2">
 				<h1 className="text-4xl font-bold tracking-tight">{concept.title}</h1>
 				<p className="text-muted-foreground text-lg">
-					Benchmark results — {concept.companyName} · {concept.releaseYear} · {concept.language}
+					Benchmark results — {concept.releaseYear} · {concept.language}
 				</p>
 			</div>
 

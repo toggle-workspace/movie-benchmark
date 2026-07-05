@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -23,6 +24,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TMDB_GENRES } from "@/lib/tmdb"
 
 const formSchema = z.object({
@@ -46,6 +48,7 @@ type FormValues = z.infer<typeof formSchema>
 
 export default function BenchmarkPage() {
 	const router = useRouter()
+	const [submitError, setSubmitError] = useState<string | null>(null)
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -59,6 +62,7 @@ export default function BenchmarkPage() {
 	})
 
 	async function onSubmit(values: FormValues) {
+		setSubmitError(null)
 		const res = await fetch("/api/benchmark", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -66,7 +70,10 @@ export default function BenchmarkPage() {
 		})
 
 		if (!res.ok) {
-			toast.error("Benchmark failed. Please try again.")
+			const data = await res.json().catch(() => ({}))
+			const message = data?.error ?? "Benchmark failed. Please try again."
+			setSubmitError(message)
+			toast.error(message)
 			return
 		}
 
@@ -276,6 +283,12 @@ export default function BenchmarkPage() {
 									</FormItem>
 								)}
 							/>
+
+							{submitError && (
+								<Alert variant="destructive">
+									<AlertDescription>{submitError}</AlertDescription>
+								</Alert>
+							)}
 
 							<Button
 								type="submit"

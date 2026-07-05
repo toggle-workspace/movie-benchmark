@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest"
 import {
 	scoreAudienceReception,
 	scoreRegionalFit,
-	scoreTrackRecord,
 	scoreGlobalCompetitiveness,
 	scoreRevenuePotential,
 	computeAggregate,
@@ -60,22 +59,6 @@ describe("scoreRegionalFit", () => {
 	})
 })
 
-describe("scoreTrackRecord", () => {
-	it("returns null for fewer than 3 qualifying films", () => {
-		const films = [movie({ vote_count: 15 }), movie({ vote_count: 20 })]
-		expect(scoreTrackRecord(films).score).toBeNull()
-	})
-
-	it("averages vote_average of qualifying films", () => {
-		const films = [
-			movie({ vote_average: 8.0, vote_count: 50 }),
-			movie({ vote_average: 6.0, vote_count: 50 }),
-			movie({ vote_average: 7.0, vote_count: 50 }),
-		]
-		expect(scoreTrackRecord(films).score).toBe(70)
-	})
-})
-
 describe("scoreGlobalCompetitiveness", () => {
 	it("returns null when regional films insufficient", () => {
 		const result = scoreGlobalCompetitiveness([], [
@@ -126,8 +109,7 @@ describe("computeAggregate", () => {
 		const scores = {
 			revenuePotential: { score: 60, label: "", description: "", films: [] },
 			audienceReception: { score: 80, label: "", description: "", films: [] },
-			regionalFit: { score: null, label: "", description: "", films: [] },
-			trackRecord: { score: 40, label: "", description: "", films: [] },
+			regionalFit: { score: 40, label: "", description: "", films: [] },
 			globalCompetitiveness: { score: null, label: "", description: "", films: [] },
 		}
 		expect(computeAggregate(scores)).toBe(60)

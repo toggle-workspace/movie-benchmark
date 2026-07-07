@@ -5,13 +5,13 @@ Add a Local Market score dimension powered by FINAS (Malaysian film authority) d
 TMDB's regional query (MY|ID|TH) blends Malaysian films with Indonesian and Thai films, diluting the local market signal. Malaysian producers need a benchmark grounded in actual Malaysian theatrical performance — gross, admissions, distributor — which FINAS tracks but TMDB does not.
 
 ## Scope
-- [ ] Define `FinasFilm` type in `lib/finas.ts` with fields: title, year, genre, grossMYR, admissions, distributor
-- [ ] Seed `lib/finas.ts` with a static dataset of Malaysian films from FINAS records
-- [ ] Add `getFinasFilms(genreSlug: string, releaseYear: number): FinasFilm[]` filter function in `lib/finas.ts`
-- [ ] Add `scoreLocalMarket(finasFilms: FinasFilm[], budgetMYR?: number): ScoreResult` in `lib/scoring.ts`
-- [ ] Add `localMarket: ScoreResult` to `BenchmarkScores` interface in `lib/scoring.ts`
-- [ ] Wire `scoreLocalMarket` into `app/api/benchmark/route.ts` alongside existing scores
-- [ ] Display `localMarket` as a score card on the results page (`app/(dashboard)/dashboard/results/[id]/page.tsx`)
+- [x] Define `FinasFilm` type in `lib/finas.ts` with fields: title, year, genre, grossMYR, admissions, distributor
+- [x] Seed `lib/finas.ts` with a static dataset of Malaysian films from FINAS records
+- [x] Add `getFinasFilms(genreSlug: string, releaseYear: number): FinasFilm[]` filter function in `lib/finas.ts`
+- [x] Add `scoreLocalMarket(finasFilms: FinasFilm[], budgetMYR?: number): ScoreResult` in `lib/scoring.ts`
+- [x] Add `localMarket: ScoreResult` to `BenchmarkScores` interface in `lib/scoring.ts`
+- [x] Wire `scoreLocalMarket` into `app/api/benchmark/route.ts` alongside existing scores
+- [x] Display `localMarket` as a score card on the results page (`app/(dashboard)/dashboard/results/[id]/page.tsx`)
 
 ## Out of scope
 - Live FINAS API (no public API exists; static dataset is the only viable approach)
@@ -20,12 +20,12 @@ TMDB's regional query (MY|ID|TH) blends Malaysian films with Indonesian and Thai
 - Replacing the existing `regionalFit` score (keeps MY|ID|TH TMDB data intact for regional context)
 
 ## Acceptance
-- [ ] Benchmark results page shows a "Local Market" score card alongside the existing 4 dimensions
-- [ ] Score card table lists FINAS comparison films with title, year, gross (MYR), and admissions
-- [ ] Score reflects proximity of concept's budget/genre to Malaysian theatrical comps
-- [ ] Null score ("Insufficient data") returned when fewer than 3 FINAS films match the genre/year window
-- [ ] Existing 4 dimension scores are unchanged
-- [ ] `npx vitest run` passes (scoring unit tests)
+- [x] Benchmark results page shows a "Local Market (FINAS)" score card alongside the existing 4 dimensions
+- [x] Score card table lists FINAS comparison films with title, year, gross (RM), and admissions
+- [x] Score reflects proximity of concept's budget/genre to Malaysian theatrical comps
+- [x] Null score ("Insufficient data") returned when fewer than 3 FINAS films match the genre/year window
+- [x] Existing 4 dimension scores are unchanged
+- [x] `npx vitest run` passes (10/10 tests)
 
 ## Notes
 - `BenchmarkScores` in `lib/scoring.ts:19` currently has 4 dimensions + `aggregate` — add `localMarket` as the 5th

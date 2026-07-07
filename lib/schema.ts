@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, json } from "drizzle-orm/pg-core"
+import { pgTable, text, boolean, timestamp, json, integer, numeric } from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
@@ -48,6 +48,16 @@ export const verification = pgTable("verification", {
 	expiresAt: timestamp("expiresAt").notNull(),
 	createdAt: timestamp("createdAt").notNull().defaultNow(),
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+})
+
+export const boxOfficeFilm = pgTable("box_office_film", {
+	id: text("id").primaryKey(),
+	year: integer("year").notNull(),
+	title: text("title").notNull(),
+	producer: text("producer").notNull(),
+	releaseDate: timestamp("release_date").notNull(),
+	revenue: numeric("revenue", { precision: 10, scale: 2 }).notNull(),
+	fetchedAt: timestamp("fetched_at").notNull().defaultNow(),
 })
 
 export const benchmarkRun = pgTable("benchmark_run", {

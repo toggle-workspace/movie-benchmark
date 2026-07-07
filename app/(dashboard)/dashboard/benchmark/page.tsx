@@ -75,6 +75,9 @@ export default function BenchmarkPage() {
     defaultValues: {
       title: "",
       releaseYear: new Date().getFullYear() + 1,
+      director: "",
+      cast: "",
+      synopsis: "",
       audience: "General",
       language: "Malay",
       platform: "Cinema",
@@ -241,7 +244,7 @@ export default function BenchmarkPage() {
                 <FormItem>
                   <FormLabel>Estimated Budget (MYR, optional)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="5000000" {...field} />
+                    <Input type="number" placeholder="5000000" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

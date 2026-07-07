@@ -13,7 +13,7 @@ import {
 	computeSalesSummary,
 	computeAggregate,
 } from "@/lib/scoring"
-import { getFinasFilms } from "@/lib/finas"
+import { getFinasFilms, getAllFinasFilmsForGenre } from "@/lib/finas"
 
 export interface MovieConcept {
 	title: string
@@ -37,20 +37,21 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Missing required fields: title, genreId, releaseYear" }, { status: 400 })
 	}
 
-	const [regionalFilms, globalFilms, finasFilms] = await Promise.all([
+	const [regionalFilms, globalFilms, finasFilms, allGenreFilms] = await Promise.all([
 		fetchRegionalFilms(concept.genreId, concept.releaseYear),
 		fetchGlobalFilms(concept.genreId, concept.releaseYear),
-		Promise.resolve(getFinasFilms(concept.genreId, concept.releaseYear)),
+		getFinasFilms(concept.genreId, concept.releaseYear),
+		getAllFinasFilmsForGenre(concept.genreId),
 	])
 
 	const enrichedRegional = await enrichWithRevenue(regionalFilms)
 
 	const malaysianBoxOffice = scoreMalaysianBoxOffice(finasFilms, concept.budgetMYR)
 	const roiForecast = scoreRoiForecast(finasFilms, concept.budgetMYR)
-	const genreMomentum = scoreGenreMomentum(concept.genreId, concept.releaseYear)
+	const genreMomentum = scoreGenreMomentum(allGenreFilms, concept.releaseYear)
 	const audienceAppeal = scoreAudienceAppeal(enrichedRegional)
 	const globalCompetitiveness = scoreGlobalCompetitiveness(regionalFilms, globalFilms)
-	const salesSummary = computeSalesSummary(finasFilms, concept.genreId, concept.releaseYear, concept.budgetMYR)
+	const salesSummary = computeSalesSummary(finasFilms, allGenreFilms, concept.releaseYear, concept.budgetMYR)
 
 	const dimensionScores = { malaysianBoxOffice, roiForecast, genreMomentum, audienceAppeal, globalCompetitiveness }
 	const aggregate = computeAggregate(dimensionScores)

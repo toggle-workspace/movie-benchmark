@@ -60,6 +60,16 @@ export const boxOfficeFilm = pgTable("box_office_film", {
 	fetchedAt: timestamp("fetched_at").notNull().defaultNow(),
 })
 
+export const finasMovieArchive = pgTable("finas_movie_archive", {
+	id: text("id").primaryKey(),
+	title: text("title").notNull(),
+	year: integer("year").notNull(),
+	genreIds: json("genre_ids").$type<number[]>().notNull().default([]),
+	grossMYR: numeric("gross_myr", { precision: 12, scale: 2 }).notNull(),
+	admissions: integer("admissions").notNull(),
+	distributor: text("distributor").notNull(),
+})
+
 export const benchmarkRun = pgTable("benchmark_run", {
 	id: text("id").primaryKey(),
 	userId: text("userId")

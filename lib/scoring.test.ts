@@ -93,9 +93,18 @@ describe("scoreRoiForecast", () => {
 
 describe("scoreGenreMomentum", () => {
 	it("returns a score and trend label", () => {
-		const result = scoreGenreMomentum(27, 2023) // Horror, recent window
+		const films = [
+			finasFilm({ year: 2019 }),
+			finasFilm({ year: 2020 }),
+			finasFilm({ year: 2014 }),
+			finasFilm({ year: 2015 }),
+			finasFilm({ year: 2016 }),
+		]
+		const result = scoreGenreMomentum(films, 2023)
 		expect(result.score).not.toBeNull()
-		expect(["Growing", "Stable", "Declining"]).toContain(result.description.includes("Growing") ? "Growing" : result.description.includes("Declining") ? "Declining" : "Stable")
+		expect(["Growing", "Stable", "Declining"]).toContain(
+			result.description.includes("Growing") ? "Growing" : result.description.includes("Declining") ? "Declining" : "Stable"
+		)
 	})
 })
 

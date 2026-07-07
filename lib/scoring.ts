@@ -1,6 +1,5 @@
 import type { TmdbMovie } from "./tmdb"
 import type { FinasFilm } from "./finas"
-import { getAllFinasFilmsForGenre } from "./finas"
 
 export interface ComparisonFilm {
 	title: string
@@ -129,10 +128,9 @@ export function scoreRoiForecast(
 }
 
 export function scoreGenreMomentum(
-	genreId: number,
+	allGenreFilms: FinasFilm[],
 	releaseYear: number,
 ): ScoreResult {
-	const allGenreFilms = getAllFinasFilmsForGenre(genreId)
 	const recent = allGenreFilms.filter((f) => f.year >= releaseYear - 5 && f.year < releaseYear).length
 	const prior = allGenreFilms.filter((f) => f.year >= releaseYear - 10 && f.year < releaseYear - 5).length
 
@@ -202,7 +200,7 @@ export function scoreGlobalCompetitiveness(
 
 export function computeSalesSummary(
 	finasFilms: FinasFilm[],
-	genreId: number,
+	allGenreFilms: FinasFilm[],
 	releaseYear: number,
 	budgetMYR?: number,
 ): SalesSummary {
@@ -217,7 +215,6 @@ export function computeSalesSummary(
 		.slice(0, 3)
 		.map(([name]) => name)
 
-	const allGenreFilms = getAllFinasFilmsForGenre(genreId)
 	const recent = allGenreFilms.filter((f) => f.year >= releaseYear - 5 && f.year < releaseYear).length
 	const prior = allGenreFilms.filter((f) => f.year >= releaseYear - 10 && f.year < releaseYear - 5).length
 	const trend: "Growing" | "Stable" | "Declining" =

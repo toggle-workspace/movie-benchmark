@@ -1,4 +1,5 @@
 import type { TmdbMovie } from "./tmdb"
+import type { FinasFilm } from "./finas"
 
 export interface ComparisonFilm {
 	title: string
@@ -21,6 +22,7 @@ export interface BenchmarkScores {
 	audienceReception: ScoreResult
 	regionalFit: ScoreResult
 	globalCompetitiveness: ScoreResult
+	localMarket: ScoreResult
 	aggregate: number
 }
 
@@ -134,6 +136,42 @@ export function scoreGlobalCompetitiveness(
 		label: "Global Competitiveness",
 		description: `Regional avg ${regionalAvg.toFixed(1)} vs global avg ${globalAvg.toFixed(1)}`,
 		films: globalFilms.slice(0, 10).map(toComparison),
+	}
+}
+
+function toFinasComparison(f: FinasFilm): ComparisonFilm {
+	return {
+		title: f.title,
+		country: "MY",
+		releaseYear: f.year,
+		revenue: f.grossMYR, // ponytail: MYR stored in revenue field; label updated on results page
+		avgRating: 0,
+		voteCount: f.admissions,
+	}
+}
+
+export function scoreLocalMarket(
+	finasFilms: FinasFilm[],
+	budgetMYR?: number,
+): ScoreResult {
+	if (finasFilms.length < 3) {
+		return {
+			score: null,
+			label: "Local Market",
+			description: "Insufficient Malaysian film data for this genre/year window",
+			films: finasFilms.map(toFinasComparison),
+		}
+	}
+
+	const medianGross = median(finasFilms.map((f) => f.grossMYR))
+	const proxy = budgetMYR ?? medianGross
+	const score = Math.min(100, Math.round((proxy / medianGross) * 50))
+
+	return {
+		score,
+		label: "Local Market",
+		description: `${finasFilms.length} Malaysian films (FINAS); median gross RM ${medianGross.toLocaleString()}`,
+		films: finasFilms.slice(0, 10).map(toFinasComparison),
 	}
 }
 

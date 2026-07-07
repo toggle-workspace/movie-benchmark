@@ -2,8 +2,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Clapperboard, History, Trophy } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clapperboard,
+  History,
+  Trophy,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const sidebarGroups = [
@@ -61,16 +68,23 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
         )}
       >
         {!isCollapsed && (
-          <Link
-            href="/dashboard/benchmark"
-            className="flex items-center gap-3 group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Clapperboard className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold group-hover:text-primary transition-colors">
-              MovieBench
-            </span>
+          <Link href="/dashboard/benchmark" className="flex items-center">
+            <Image
+              src="/brand/logo-light.svg"
+              alt="Toggle"
+              width={100}
+              height={33}
+              className="dark:hidden"
+              priority
+            />
+            <Image
+              src="/brand/logo-dark.svg"
+              alt="Toggle"
+              width={100}
+              height={33}
+              className="hidden dark:block"
+              priority
+            />
           </Link>
         )}
         {isCollapsed ? (

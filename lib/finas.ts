@@ -15,7 +15,7 @@ export async function getFinasFilms(genreId: number, releaseYear: number): Promi
 	const rows = await db
 		.select()
 		.from(finasMovieArchive)
-		.where(sql`${finasMovieArchive.genreIds} @> ${JSON.stringify([genreId])}::json
+		.where(sql`${finasMovieArchive.genreIds}::jsonb @> ${JSON.stringify([genreId])}::jsonb
 			AND ABS(${finasMovieArchive.year} - ${releaseYear}) <= 5`)
 	return rows.map(toFinasFilm)
 }
@@ -24,7 +24,7 @@ export async function getAllFinasFilmsForGenre(genreId: number): Promise<FinasFi
 	const rows = await db
 		.select()
 		.from(finasMovieArchive)
-		.where(sql`${finasMovieArchive.genreIds} @> ${JSON.stringify([genreId])}::json`)
+		.where(sql`${finasMovieArchive.genreIds}::jsonb @> ${JSON.stringify([genreId])}::jsonb`)
 	return rows.map(toFinasFilm)
 }
 

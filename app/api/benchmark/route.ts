@@ -3,21 +3,17 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { benchmarkRun } from "@/lib/schema"
 import { headers } from "next/headers"
+import { fetchRegionalFilms, fetchGlobalFilms, enrichWithRevenue } from "@/lib/tmdb"
 import {
-	fetchRegionalFilms,
-	fetchGlobalFilms,
-	enrichWithRevenue,
-} from "@/lib/tmdb"
-import {
-	scoreRevenuePotential,
-	scoreAudienceReception,
-	scoreRegionalFit,
+	scoreMalaysianBoxOffice,
+	scoreRoiForecast,
+	scoreGenreMomentum,
+	scoreAudienceAppeal,
 	scoreGlobalCompetitiveness,
-	scoreLocalMarket,
+	computeSalesSummary,
 	computeAggregate,
 } from "@/lib/scoring"
-import { getFinasFilms } from "@/lib/finas"
-import { getMyrToUsdRate } from "@/lib/exchange"
+import { getFinasFilms, getAllFinasFilmsForGenre } from "@/lib/finas"
 
 export interface MovieConcept {
 	title: string
@@ -41,28 +37,26 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Missing required fields: title, genreId, releaseYear" }, { status: 400 })
 	}
 
-	const [regionalFilms, globalFilms, myrToUsd] = await Promise.all([
+	const [regionalFilms, globalFilms, finasFilms, allGenreFilms] = await Promise.all([
 		fetchRegionalFilms(concept.genreId, concept.releaseYear),
 		fetchGlobalFilms(concept.genreId, concept.releaseYear),
-		getMyrToUsdRate(),
+		getFinasFilms(concept.genreId, concept.releaseYear),
+		getAllFinasFilmsForGenre(concept.genreId),
 	])
 
 	const enrichedRegional = await enrichWithRevenue(regionalFilms)
 
-	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * myrToUsd : undefined
-
-	const finasFilms = getFinasFilms(concept.genreId, concept.releaseYear)
-
-	const revenuePotential = scoreRevenuePotential(enrichedRegional, budgetUSD)
-	const audienceReception = scoreAudienceReception(regionalFilms)
-	const regionalFit = scoreRegionalFit(regionalFilms)
+	const malaysianBoxOffice = scoreMalaysianBoxOffice(finasFilms, concept.budgetMYR)
+	const roiForecast = scoreRoiForecast(finasFilms, concept.budgetMYR)
+	const genreMomentum = scoreGenreMomentum(allGenreFilms, concept.releaseYear)
+	const audienceAppeal = scoreAudienceAppeal(enrichedRegional)
 	const globalCompetitiveness = scoreGlobalCompetitiveness(regionalFilms, globalFilms)
-	const localMarket = scoreLocalMarket(finasFilms, concept.budgetMYR)
+	const salesSummary = computeSalesSummary(finasFilms, allGenreFilms, concept.releaseYear, concept.budgetMYR)
 
-	const scores = { revenuePotential, audienceReception, regionalFit, globalCompetitiveness, localMarket }
-	const aggregate = computeAggregate(scores)
+	const dimensionScores = { malaysianBoxOffice, roiForecast, genreMomentum, audienceAppeal, globalCompetitiveness }
+	const aggregate = computeAggregate(dimensionScores)
 
-	const result = { ...scores, aggregate }
+	const result = { ...dimensionScores, salesSummary, aggregate }
 
 	const [run] = await db
 		.insert(benchmarkRun)

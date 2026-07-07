@@ -50,14 +50,14 @@ export const verification = pgTable("verification", {
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 })
 
-export const boxOfficeFilm = pgTable("box_office_film", {
+export const finasMovieArchive = pgTable("finas_movie_archive", {
 	id: text("id").primaryKey(),
-	year: integer("year").notNull(),
 	title: text("title").notNull(),
-	producer: text("producer").notNull(),
-	releaseDate: timestamp("release_date").notNull(),
-	revenue: numeric("revenue", { precision: 10, scale: 2 }).notNull(),
-	fetchedAt: timestamp("fetched_at").notNull().defaultNow(),
+	year: integer("year").notNull(),
+	genreIds: json("genre_ids").$type<number[]>().notNull().default([]),
+	grossMYR: numeric("gross_myr", { precision: 12, scale: 2 }).notNull(),
+	admissions: integer("admissions").notNull(),
+	distributor: text("distributor").notNull(),
 })
 
 export const benchmarkRun = pgTable("benchmark_run", {

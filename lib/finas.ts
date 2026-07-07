@@ -1,4 +1,8 @@
 import * as cheerio from "cheerio"
+import { Agent } from "undici"
+
+// ponytail: FINAS has an invalid SSL cert — disable verification for this one fetch
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } })
 
 export type FinasFilm = {
 	title: string
@@ -11,7 +15,16 @@ export async function fetchFinasBoxOffice(year?: number): Promise<FinasFilm[]> {
 	const url = new URL("https://www.finas.gov.my/industry/box-office")
 	if (year) url.searchParams.set("year", String(year))
 
-	const res = await fetch(url.toString(), { next: { revalidate: 86400 } })
+	let res: Response
+	try {
+		res = await fetch(url.toString(), {
+				// @ts-expect-error undici dispatcher not in fetch types
+				dispatcher: insecureAgent,
+				next: { revalidate: 86400 },
+			})
+	} catch {
+		return []
+	}
 	if (!res.ok) return []
 
 	const html = await res.text()

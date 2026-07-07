@@ -133,7 +133,7 @@ export default async function ResultsPage({ params }: ResultPageProps) {
 
 			{/* Dimension score cards */}
 			<div className="space-y-4">
-				{dimensions.map(({ key, label }) => (
+				{dimensions.filter(({ key }) => result[key] != null).map(({ key, label }) => (
 					<ScoreCard key={key} label={label} result={result[key]} />
 				))}
 			</div>

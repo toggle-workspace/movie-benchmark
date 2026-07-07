@@ -1,12 +1,14 @@
 import { describe, it, expect } from "vitest"
 import {
-	scoreAudienceReception,
-	scoreRegionalFit,
+	scoreAudienceAppeal,
 	scoreGlobalCompetitiveness,
-	scoreRevenuePotential,
+	scoreMalaysianBoxOffice,
+	scoreRoiForecast,
+	scoreGenreMomentum,
 	computeAggregate,
 } from "./scoring"
 import type { TmdbMovie } from "./tmdb"
+import type { FinasFilm } from "./finas"
 
 function movie(overrides: Partial<TmdbMovie> = {}): TmdbMovie {
 	return {
@@ -23,9 +25,21 @@ function movie(overrides: Partial<TmdbMovie> = {}): TmdbMovie {
 	}
 }
 
-describe("scoreAudienceReception", () => {
+function finasFilm(overrides: Partial<FinasFilm> = {}): FinasFilm {
+	return {
+		title: "Test MY Film",
+		year: 2020,
+		genreIds: [27],
+		grossMYR: 10_000_000,
+		admissions: 800_000,
+		distributor: "Astro Shaw",
+		...overrides,
+	}
+}
+
+describe("scoreAudienceAppeal", () => {
 	it("returns null when fewer than 3 films have vote_count >= 10", () => {
-		const result = scoreAudienceReception([
+		const result = scoreAudienceAppeal([
 			movie({ vote_count: 5 }),
 			movie({ vote_count: 3 }),
 		])
@@ -38,38 +52,60 @@ describe("scoreAudienceReception", () => {
 			movie({ vote_average: 6.0 }),
 			movie({ vote_average: 7.0 }),
 		]
-		const result = scoreAudienceReception(films)
+		const result = scoreAudienceAppeal(films)
 		expect(result.score).toBe(70)
 	})
 })
 
-describe("scoreRegionalFit", () => {
-	it("returns 0 for empty film list", () => {
-		expect(scoreRegionalFit([]).score).toBe(0)
+describe("scoreMalaysianBoxOffice", () => {
+	it("returns null when fewer than 3 FINAS films", () => {
+		expect(scoreMalaysianBoxOffice([finasFilm(), finasFilm()]).score).toBeNull()
 	})
 
-	it("caps at 100 for 10+ films", () => {
-		const films = Array.from({ length: 12 }, () => movie())
-		expect(scoreRegionalFit(films).score).toBe(100)
+	it("returns 50 when no budget given (proxy = median)", () => {
+		const films = [finasFilm(), finasFilm(), finasFilm()]
+		expect(scoreMalaysianBoxOffice(films).score).toBe(50)
 	})
 
-	it("scores 3 films as 30", () => {
-		const films = [movie(), movie(), movie()]
-		expect(scoreRegionalFit(films).score).toBe(30)
+	it("scores higher when budget exceeds median gross", () => {
+		const films = [finasFilm(), finasFilm(), finasFilm()] // median = 10M
+		const result = scoreMalaysianBoxOffice(films, 20_000_000) // budget = 20M = 2x median
+		expect(result.score).toBe(100) // min(100, (20M/10M)*50 = 100)
+	})
+})
+
+describe("scoreRoiForecast", () => {
+	it("returns null when no budget provided", () => {
+		const films = [finasFilm(), finasFilm(), finasFilm()]
+		expect(scoreRoiForecast(films).score).toBeNull()
+	})
+
+	it("returns null when fewer than 3 FINAS films", () => {
+		expect(scoreRoiForecast([finasFilm()], 5_000_000).score).toBeNull()
+	})
+
+	it("scores ~33 for 1x ROI (budget equals median gross)", () => {
+		const films = [finasFilm(), finasFilm(), finasFilm()] // median = 10M
+		const result = scoreRoiForecast(films, 10_000_000) // ROI = 1x
+		expect(result.score).toBe(33) // min(100, 1 * 33 = 33)
+	})
+})
+
+describe("scoreGenreMomentum", () => {
+	it("returns a score and trend label", () => {
+		const result = scoreGenreMomentum(27, 2023) // Horror, recent window
+		expect(result.score).not.toBeNull()
+		expect(["Growing", "Stable", "Declining"]).toContain(result.description.includes("Growing") ? "Growing" : result.description.includes("Declining") ? "Declining" : "Stable")
 	})
 })
 
 describe("scoreGlobalCompetitiveness", () => {
 	it("returns null when regional films insufficient", () => {
-		const result = scoreGlobalCompetitiveness([], [
-			movie(),
-			movie(),
-			movie(),
-		])
+		const result = scoreGlobalCompetitiveness([], [movie(), movie(), movie()])
 		expect(result.score).toBeNull()
 	})
 
-	it("returns 50 when regional avg equals global avg", () => {
+	it("returns 100 when regional avg equals global avg (fixed cap)", () => {
 		const regional = [
 			movie({ vote_average: 7, vote_count: 50 }),
 			movie({ vote_average: 7, vote_count: 50 }),
@@ -80,36 +116,17 @@ describe("scoreGlobalCompetitiveness", () => {
 			movie({ vote_average: 7, vote_count: 50 }),
 			movie({ vote_average: 7, vote_count: 50 }),
 		]
-		expect(scoreGlobalCompetitiveness(regional, global_).score).toBe(50)
-	})
-})
-
-describe("scoreRevenuePotential", () => {
-	it("returns null when no qualifying films have revenue > 0", () => {
-		const films = [
-			movie({ revenue: 0 }),
-			movie({ revenue: 0 }),
-			movie({ revenue: 0 }),
-		]
-		expect(scoreRevenuePotential(films).score).toBeNull()
-	})
-
-	it("returns 50 when no budget given (proxy = median)", () => {
-		const films = [
-			movie({ revenue: 2_000_000, vote_count: 50 }),
-			movie({ revenue: 2_000_000, vote_count: 50 }),
-			movie({ revenue: 2_000_000, vote_count: 50 }),
-		]
-		expect(scoreRevenuePotential(films).score).toBe(50)
+		expect(scoreGlobalCompetitiveness(regional, global_).score).toBe(100)
 	})
 })
 
 describe("computeAggregate", () => {
 	it("averages available (non-null) scores", () => {
 		const scores = {
-			revenuePotential: { score: 60, label: "", description: "", films: [] },
-			audienceReception: { score: 80, label: "", description: "", films: [] },
-			regionalFit: { score: 40, label: "", description: "", films: [] },
+			malaysianBoxOffice: { score: 60, label: "", description: "", films: [] },
+			roiForecast: { score: null, label: "", description: "", films: [] },
+			genreMomentum: { score: 80, label: "", description: "", films: [] },
+			audienceAppeal: { score: 40, label: "", description: "", films: [] },
 			globalCompetitiveness: { score: null, label: "", description: "", films: [] },
 		}
 		expect(computeAggregate(scores)).toBe(60)

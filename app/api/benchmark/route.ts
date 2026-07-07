@@ -13,8 +13,10 @@ import {
 	scoreAudienceReception,
 	scoreRegionalFit,
 	scoreGlobalCompetitiveness,
+	scoreLocalMarket,
 	computeAggregate,
 } from "@/lib/scoring"
+import { getFinasFilms } from "@/lib/finas"
 import { getMyrToUsdRate } from "@/lib/exchange"
 
 export interface MovieConcept {
@@ -49,12 +51,15 @@ export async function POST(req: NextRequest) {
 
 	const budgetUSD = concept.budgetMYR ? concept.budgetMYR * myrToUsd : undefined
 
+	const finasFilms = getFinasFilms(concept.genreId, concept.releaseYear)
+
 	const revenuePotential = scoreRevenuePotential(enrichedRegional, budgetUSD)
 	const audienceReception = scoreAudienceReception(regionalFilms)
 	const regionalFit = scoreRegionalFit(regionalFilms)
 	const globalCompetitiveness = scoreGlobalCompetitiveness(regionalFilms, globalFilms)
+	const localMarket = scoreLocalMarket(finasFilms, concept.budgetMYR)
 
-	const scores = { revenuePotential, audienceReception, regionalFit, globalCompetitiveness }
+	const scores = { revenuePotential, audienceReception, regionalFit, globalCompetitiveness, localMarket }
 	const aggregate = computeAggregate(scores)
 
 	const result = { ...scores, aggregate }

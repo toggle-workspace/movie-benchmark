@@ -54,7 +54,7 @@ function ScoreCard({ label, result }: { label: string; result: ScoreResult }) {
 									<TableHead>Title</TableHead>
 									<TableHead>Country</TableHead>
 									<TableHead>Year</TableHead>
-									<TableHead>Revenue (USD)</TableHead>
+									<TableHead>Revenue</TableHead>
 									<TableHead>Rating</TableHead>
 									<TableHead>Votes</TableHead>
 								</TableRow>
@@ -67,7 +67,7 @@ function ScoreCard({ label, result }: { label: string; result: ScoreResult }) {
 										<TableCell>{film.releaseYear}</TableCell>
 										<TableCell>
 											{film.revenue > 0
-												? `$${film.revenue.toLocaleString()}`
+												? `${film.country === "MY" ? "RM" : "$"}${film.revenue.toLocaleString()}`
 												: "—"}
 										</TableCell>
 										<TableCell>{film.avgRating.toFixed(1)}</TableCell>
@@ -103,6 +103,7 @@ export default async function ResultsPage({ params }: ResultPageProps) {
 		{ key: "audienceReception", label: "Audience Reception" },
 		{ key: "regionalFit", label: "Regional Fit" },
 		{ key: "globalCompetitiveness", label: "Global Competitiveness" },
+		{ key: "localMarket", label: "Local Market (FINAS)" },
 	]
 
 	return (
@@ -132,7 +133,7 @@ export default async function ResultsPage({ params }: ResultPageProps) {
 
 			{/* Dimension score cards */}
 			<div className="space-y-4">
-				{dimensions.map(({ key, label }) => (
+				{dimensions.filter(({ key }) => result[key] != null).map(({ key, label }) => (
 					<ScoreCard key={key} label={label} result={result[key]} />
 				))}
 			</div>

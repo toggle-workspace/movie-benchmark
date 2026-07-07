@@ -111,6 +111,7 @@ describe("computeAggregate", () => {
 			audienceReception: { score: 80, label: "", description: "", films: [] },
 			regionalFit: { score: 40, label: "", description: "", films: [] },
 			globalCompetitiveness: { score: null, label: "", description: "", films: [] },
+			localMarket: { score: null, label: "", description: "", films: [] },
 		}
 		expect(computeAggregate(scores)).toBe(60)
 	})

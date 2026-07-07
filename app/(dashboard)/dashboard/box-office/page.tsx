@@ -11,6 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table"
+import { YearSelect } from "./year-select"
 
 const FINAS_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017]
 
@@ -101,21 +102,7 @@ export default async function BoxOfficePage({ searchParams }: BoxOfficePageProps
 
 			<div className="flex items-center gap-3">
 				<span className="text-sm font-medium text-muted-foreground">Year:</span>
-				<div className="flex gap-2 flex-wrap">
-					{FINAS_YEARS.map((y) => (
-						<a
-							key={y}
-							href={`/dashboard/box-office?year=${y}`}
-							className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-								y === year
-									? "bg-primary text-primary-foreground"
-									: "bg-muted text-muted-foreground hover:bg-muted/80"
-							}`}
-						>
-							{y}
-						</a>
-					))}
-				</div>
+				<YearSelect years={FINAS_YEARS} current={year} />
 			</div>
 
 			<div className="rounded-md border overflow-x-auto">

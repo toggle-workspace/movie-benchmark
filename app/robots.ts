@@ -5,14 +5,7 @@ export default function robots(): MetadataRoute.Robots {
 		rules: {
 			userAgent: "*",
 			allow: "/",
-			disallow: [
-				"/dashboard/settings/",
-				"/dashboard/errors/",
-				"/api/",
-				"/_next/",
-				"/admin/",
-			],
+			disallow: ["/api/", "/_next/"],
 		},
-		sitemap: "https://shadcn-nextjs-dashboard.vercel.app/sitemap.xml",
 	};
 }

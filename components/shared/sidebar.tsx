@@ -1,11 +1,19 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Clapperboard, History, Trophy } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clapperboard,
+  History,
+  Trophy,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const sidebarGroups = [
+export const sidebarGroups = [
   {
     title: "Movie Benchmark",
     items: [
@@ -37,6 +45,7 @@ interface SidebarProps {
 
 export function Sidebar({ onMobileClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = usePathname();
 
   const handleLinkClick = () => {
     if (onMobileClose) {
@@ -47,7 +56,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex h-full flex-col border-r bg-card shadow-sm transition-all duration-300",
+        "hidden md:flex h-full flex-col border-r bg-card shadow-sm transition-all duration-300",
         isCollapsed ? "w-16" : "w-72",
       )}
     >
@@ -59,16 +68,23 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
         )}
       >
         {!isCollapsed && (
-          <Link
-            href="/dashboard/benchmark"
-            className="flex items-center gap-3 group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Clapperboard className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold group-hover:text-primary transition-colors">
-              MovieBench
-            </span>
+          <Link href="/dashboard/benchmark" className="flex items-center">
+            <Image
+              src="/brand/logo-light.svg"
+              alt="Toggle"
+              width={100}
+              height={33}
+              className="dark:hidden"
+              priority
+            />
+            <Image
+              src="/brand/logo-dark.svg"
+              alt="Toggle"
+              width={100}
+              height={33}
+              className="hidden dark:block"
+              priority
+            />
           </Link>
         )}
         {isCollapsed ? (
@@ -114,8 +130,11 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                     href={item.href}
                     onClick={handleLinkClick}
                     className={cn(
-                      "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 hover:bg-muted text-muted-foreground hover:text-foreground",
+                      "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 hover:bg-muted hover:text-foreground",
                       isCollapsed && "justify-center px-3 py-4",
+                      pathname === item.href
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground",
                     )}
                     title={isCollapsed ? item.title : undefined}
                   >

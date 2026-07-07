@@ -50,16 +50,6 @@ export const verification = pgTable("verification", {
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 })
 
-export const boxOfficeFilm = pgTable("box_office_film", {
-	id: text("id").primaryKey(),
-	year: integer("year").notNull(),
-	title: text("title").notNull(),
-	producer: text("producer").notNull(),
-	releaseDate: timestamp("release_date").notNull(),
-	revenue: numeric("revenue", { precision: 10, scale: 2 }).notNull(),
-	fetchedAt: timestamp("fetched_at").notNull().defaultNow(),
-})
-
 export const finasMovieArchive = pgTable("finas_movie_archive", {
 	id: text("id").primaryKey(),
 	title: text("title").notNull(),
